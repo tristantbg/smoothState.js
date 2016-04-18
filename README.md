@@ -216,6 +216,18 @@ Or, for the opposite effect, use something like @cihadturhan's [jQuery.aim](http
 $('#main').smoothState({ prefetchOn: 'aim' });
 ```
 
+### `locationHeader`
+
+A field name to lookup among the headers from the HTTP response to alert smoothState.js of any redirected URL.
+
+smoothState.js makes AJAX requests using `XMLHttpRequest`, which silently follows redirects. This transparence prevents smoothState.js from knowing if a request resulted in a redirection.
+
+For example, when you visit `/about` and the server redirects you to `/about/company`, smoothState.js is only ever informed of a successful response from `/about`. The `locationHeader` option gives smoothState.js a HTTP response header to consult and replace the browser's history entry with the _real_ URI.
+
+```js
+$('#main').smoothState({ locationHeader: 'X-SmoothState-Location' });
+```
+
 ### `cacheLength`
 
 The number of pages to cache. smoothState.js can cache pages in memory, avoiding the user having to request pages more than once. Cached pages will load instantaneously.
@@ -412,7 +424,7 @@ Please **avoid creating a Github issue** with personal support requests, to keep
 
 smoothState.js provides the [`onAfter`](https://github.com/miguel-perez/smoothState.js#onafter) callback function that allows you to re-run your plugins. This can be tricky if you're unfamiliar with how AJAX works.
 
-When you run a plugin on `$(document).ready()`, it's going to register *only* on elements that are currently on the page. Since we're injecting new elements every load, we need to run the plugins again, scoping it to *just* the new stuff. 
+When you run a plugin on `$(document).ready()`, it's going to register *only* on elements that are currently on the page. Since we're injecting new elements every load, we need to run the plugins again, scoping it to *just* the new stuff.
 
 A good way to do this is to wrap your plugin initializations in a function that we call on both `$.fn.ready()` and `onAfter`. You'll want to specify the [context](http://api.jquery.com/jQuery/#jQuery-selector-context) each time you initialize the plugins so that you don't double-bind them. This is called a "module execution controller".
 
