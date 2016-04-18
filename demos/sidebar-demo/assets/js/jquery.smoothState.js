@@ -45,8 +45,8 @@
       /** jQuery selector to specify which anchors smoothState should bind to */
       anchors: 'a',
 
-  	  /** Regex to specify which href smoothState should load. If empty, every href will be permitted. */
-  	  hrefRegex: '',
+      /** Regex to specify which href smoothState should load. If empty, every href will be permitted. */
+      hrefRegex: '',
 
       /** jQuery selector to specify which forms smoothState should bind to */
       forms: 'form',
@@ -321,15 +321,7 @@
           page = $page.data('smoothState'),
           diffUrl = (page.href !== url && !utility.isHash(url, page.href)),
           diffState = (e.state !== page.cache[page.href].state);
-        
-          //
-          // diffState = (event.state !== page.cache[page.href].state); 
-          // 
-          // 24.02.2016 -- Danijel Grabež
-          // line 323 is modified due to Firefox issue mentioned in this issue:
-          // https://github.com/miguel-perez/smoothState.js/issues/255
-          // 
-        
+
         if(diffUrl || diffState) {
           if (diffState) {
             page.clear(page.href);
@@ -368,6 +360,9 @@
 
         /** Url of the content that is currently displayed */
         currentHref = window.location.href,
+
+        /** Variable that stores rate limit */
+        rateLimitRepeatTime = 0,
 
         /**
          * Clears a given page from the cache, if no url is provided
@@ -701,17 +696,14 @@
           }
         },
 
-        /**
-         * DigitalMachinist (Jeff Rose)
-         * I figured to keep these together with this above functions since they're all related.
-         * Feel free to move these somewhere more appropriate if you have such places.
-         */
-        rateLimitRepeatTime = 0,
+        /** Determine if we are over our rate limit */
         isRateLimited = function () {
           var isFirstClick = (options.repeatDelay === null);
           var isDelayOver = (parseInt(Date.now()) > rateLimitRepeatTime);
           return !(isFirstClick || isDelayOver);
         },
+
+        /** Set the rate limit */
         setRateLimitRepeatTime = function () {
           rateLimitRepeatTime = parseInt(Date.now()) + parseInt(options.repeatDelay);
         },
@@ -772,6 +764,9 @@
         clear: clear,
         load: load,
         fetch: fetch,
+        options: options,
+        isRateLimited: isRateLimited,
+        setRateLimitRepeatTime: setRateLimitRepeatTime,
         restartCSSAnimations: restartCSSAnimations
       };
     },

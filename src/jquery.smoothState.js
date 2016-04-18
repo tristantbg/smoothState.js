@@ -45,8 +45,8 @@
       /** jQuery selector to specify which anchors smoothState should bind to */
       anchors: 'a',
 
-  	  /** Regex to specify which href smoothState should load. If empty, every href will be permitted. */
-  	  hrefRegex: '',
+      /** Regex to specify which href smoothState should load. If empty, every href will be permitted. */
+      hrefRegex: '',
 
       /** jQuery selector to specify which forms smoothState should bind to */
       forms: 'form',
@@ -316,11 +316,15 @@
     /** Handles the popstate event, like when the user hits 'back' */
     onPopState = function ( e ) {
       if(e.state !== null) {
+        console.group('onPopState');
+        console.log('Event', event);
         var url = window.location.href,
           $page = $('#' + e.state.id),
           page = $page.data('smoothState'),
           diffUrl = (page.href !== url && !utility.isHash(url, page.href)),
-          diffState = (event.state !== page.cache[page.href].state);
+          diffState = (e.state !== page.cache[page.href].state);
+        console.log('$page', $page);
+        console.log('page', page);
 
         if(diffUrl || diffState) {
           if (diffState) {
@@ -329,6 +333,7 @@
           page.load(url, false);
         }
       }
+      console.groupEnd();
     },
 
     /** Constructor function */
@@ -360,6 +365,9 @@
 
         /** Url of the content that is currently displayed */
         currentHref = window.location.href,
+
+        /** Variable that stores rate limit */
+        rateLimitRepeatTime = 0,
 
         /**
          * Clears a given page from the cache, if no url is provided
@@ -457,7 +465,7 @@
             $container.one('ss.onReadyEnd', function(){
 
               // Allow prefetches to be made again
-              isTransitioning = false;
+              setTransitionFlag(false);
 
               // Run callback
               options.onAfter($container, $newContent);
@@ -595,7 +603,14 @@
 
           window.setTimeout(function(){
             if (options.scroll) {
-              $body.scrollTop(0);
+              var newPosition = 0;
+              if (typeof options.scroll !== 'boolean') {
+                var $topEl = $(options.scroll, $container);
+                if ($topEl.length) {
+                  newPosition = $topEl.offset().top;
+                }
+              }
+              $body.scrollTop(newPosition);
             }
             $container.trigger('ss.onStartEnd');
           }, options.onStart.duration);
@@ -641,8 +656,8 @@
               setRateLimitRepeatTime();
 
               var request = utility.translate($anchor.prop('href'));
-              isTransitioning = true;
-              targetHash = $anchor.prop('hash');
+              setTransitionFlag(true);
+              setTargetHash($anchor.prop('hash'));
 
               // Allows modifications to the request
               request = options.alterRequest(request);
@@ -678,7 +693,7 @@
                 type: $form.prop('method')
               };
 
-              isTransitioning = true;
+              setTransitionFlag(true);
               request = options.alterRequest(request);
 
               if (request.type.toLowerCase() === 'get') {
@@ -693,19 +708,32 @@
           }
         },
 
-        /**
-         * DigitalMachinist (Jeff Rose)
-         * I figured to keep these together with this above functions since they're all related.
-         * Feel free to move these somewhere more appropriate if you have such places.
-         */
-        rateLimitRepeatTime = 0,
+        /** Determine if we are over our rate limit */
         isRateLimited = function () {
           var isFirstClick = (options.repeatDelay === null);
           var isDelayOver = (parseInt(Date.now()) > rateLimitRepeatTime);
           return !(isFirstClick || isDelayOver);
         },
+
+        /** Set the rate limit */
         setRateLimitRepeatTime = function () {
           rateLimitRepeatTime = parseInt(Date.now()) + parseInt(options.repeatDelay);
+        },
+
+        /**
+         * Set the hash to scroll to once the new page has been fully loaded
+         * @param  {boolean}  flag
+         */
+        setTransitionFlag = function (flag) {
+          isTransitioning = !!flag;
+        },
+
+        /**
+         * Set the hash to scroll to once the new page has been fully loaded
+         * @param  {string}  hash
+         */
+        setTargetHash = function (hash) {
+          targetHash = hash;
         },
 
         /**
@@ -764,6 +792,11 @@
         clear: clear,
         load: load,
         fetch: fetch,
+        options: options,
+        isRateLimited: isRateLimited,
+        setRateLimitRepeatTime: setRateLimitRepeatTime,
+        setTransitionFlag: setTransitionFlag,
+        setTargetHash: setTargetHash,
         restartCSSAnimations: restartCSSAnimations
       };
     },
